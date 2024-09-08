@@ -1,0 +1,42 @@
+services:
+  psql:
+    image: postgres:15-alpine
+    restart: "unless-stopped"
+    environment:
+      # NOTE: Run "openssl rand -hex 24" to randomly generate
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      # NOTE: Run "openssl rand -hex 8" to randomly generate
+      - POSTGRES_USER=${POSTGRES_USER}
+    volumes:
+      - "./data/minesweeper.psql/data:/var/lib/postgresql/data"
+    expose:
+      - '5432'
+    # For production and deployment with Docker Compose, please comment "ports" to disable
+    ports:
+      - ${POSTGRES_PORT}:5432
+
+  frontend:
+    build:
+      context: msweb
+      dockerfile: Dockerfile
+    image: shiroyuki.dev/minesweeper-web
+    restart: "unless-stopped"
+    ports:
+      - 3000:80
+
+  backend:
+    build:
+      context: mspy
+      dockerfile: Dockerfile
+    image: shiroyuki.dev/minesweeper
+    restart: "unless-stopped"
+    environment:
+      - DJANGO_DEBUG=False
+      - JWT_SECRET=${JWT_SECRET}
+      - PGPASSFILE=/app/.my_pgpass
+      - PGSERVICEFILE=/app/.pg_service.conf
+    volumes:
+      - ./data/.my_pgpass:/data/.my_pgpass:ro
+      - ./data/.pg_service.conf:/data/.pg_service.conf:ro
+    ports:
+      - 8000:8000

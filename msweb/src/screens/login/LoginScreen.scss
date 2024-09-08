@@ -1,0 +1,11 @@
+.login-form {
+    width: 240px;
+
+    h1 {
+        margin-bottom: 24px;
+    }
+
+    & > button {
+        margin-top: 24px;
+    }
+}

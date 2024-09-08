@@ -1,0 +1,47 @@
+.app-container {
+    min-width: 100vw;
+    min-height: 100vh;
+
+    &[data-mode="home"],
+    &[data-mode="standby"],
+    &[data-mode="login"] {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    &[data-mode="home"] {
+        .app-controls {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background-color: #eee;
+            box-shadow: rgba(0, 0, 0, 0.25) 0 0 20px;
+            display: flex;
+
+            & button {
+                cursor: pointer;
+                border: none;
+
+                &:hover {
+                    background-color: #ddd;
+                }
+
+                &[disabled]:hover {
+                    background-color: transparent;
+                }
+
+                &.sign-out-button {
+                    background-color: #888;
+                    color: #fff;
+                }
+
+                &.active {
+                    background-color: #ddd;
+                    font-weight: 700;
+                }
+            }
+        }
+    }
+}

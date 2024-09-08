@@ -1,0 +1,53 @@
+.game-list {
+    width: 360px;
+    padding: 12px;
+
+    h1 {
+        padding: 0 12px;
+        margin-bottom: 16px;
+    }
+
+    .game-item {
+        display: flex;
+        flex-direction: column;
+        padding: 16px;
+        border: 3px solid #ddd;
+        margin-bottom: 8px;
+        cursor: pointer;
+
+        &:hover {
+            border-color: #000;
+            background-color: yellow;
+        }
+
+        & > span {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .id {
+            font-size: 10px;
+            opacity: 0.25;
+            margin-top: -12px;
+        }
+
+        .meta {
+            display: flex;
+            flex-direction: column;
+            font-weight: 700;
+            margin: 12px 0 24px 0;
+
+            .level {
+                font-size: 14px;
+            }
+
+            .dimension {
+                font-size: 24px;
+            }
+        }
+
+        .elapsed-time {
+            font-size: 12px;
+        }
+    }
+}
