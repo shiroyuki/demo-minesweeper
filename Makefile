@@ -52,6 +52,9 @@ docker-run:
 	@docker compose build frontend backend
 	@docker compose up -d
 
+.PHONY: docker-start
+docker-start: init db-init docker-run
+
 .PHONY: docker-superuser
 docker-superuser:
 	@docker compose exec -it backend python manage.py createsuperuser

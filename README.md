@@ -44,11 +44,9 @@ flowchart LR
    * Please reconfigure the file (`.env`) as needed. See the comment for tips.
    * The `.env` is used by the setup script and the backend.
    * Only `POSTGRES_HOST` and `POSTGRES_PORT` are for connecting from the host machine to the database server.
-2. Run `make init` to start a PostgreSQL container.
-3. Run `make db-init` to initialize the database.
-   * This will generate two copies of `.my_pgpass` and `.pg_service.conf` in the `mspy` and `data` folders.
-4. Run `make docker-run` to start all services (frontend and backend).
-5. As the app requires Django users, please run `make docker-superuser` to create your own account.
+2. Run `make docker-start` to start all services.
+   * After everything is running, the app is accessible at http://localhost:3000
+3. As the app requires Django users, please run `make docker-superuser` to create your own account.
 
 ## Known issues
 
