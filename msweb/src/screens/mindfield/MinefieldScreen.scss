@@ -52,14 +52,11 @@
         height: 36px;
         align-items: center;
         justify-content: center;
+        cursor: pointer;
         // font-size: 10px;
         // margin: 1px;
         border: 1px solid #fff;
         background-color: #ccc;
-
-        &[data-flag="rigged"] {
-            border-color: #ee7002;
-        }
 
         &[data-mode="cleared"] {
             background-color: #eee;
@@ -71,6 +68,10 @@
 
         &[data-mode="flagged"] {
             background-color: #0280ee;
+        }
+
+        &.suspended {
+            background-color: yellow;
         }
     }
 }

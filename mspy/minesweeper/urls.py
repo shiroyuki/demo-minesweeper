@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views
+from . import views, game_engine
 
 urlpatterns = [
     path("me", views.api_me),
@@ -10,4 +10,6 @@ urlpatterns = [
     path("games/<str:id>", views.game_session_individual),
     path("moves/", views.game_move_root),
     path("ping", views.api_ping),
+    path("rpc/snapshot/<str:session_id>", game_engine.get_snapshot),
+    path("rpc/visit/<str:session_id>", game_engine.visit),
 ]

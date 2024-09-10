@@ -3,6 +3,7 @@ import { Session, sessionManager } from "../../common/SessionManager";
 import './MinefieldScreen.scss';
 import { MinefieldSquare, MinefieldSquareMode } from "./MinefieldSquare";
 import SessionState from "../../common/SessionState";
+import { gameEngine, GameSnapshot } from "../../common/GameEngine";
 
 interface MinefieldProps {
   session: Session;
@@ -15,20 +16,14 @@ const MinefieldScreen: React.FC<MinefieldProps> = ({ session, onPause }) => {
   }
 
   const totalSquareCount = session.width * session.height;
-  const totalMineCount = session.mineDensity / 100 * totalSquareCount;
 
-
-  const mineIndexes: number[] = [];
-  for (let mineCoordinate of session.mineCoordinates || []) {
-    mineIndexes.push(convertCoordinateToIndex(mineCoordinate.x, mineCoordinate.y));
-  }
+  const [snapshot, setSnapshot] = useState<GameSnapshot | null>(null)
 
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [windowHeight, setWindowHeight] = useState(window.innerHeight);
-  const [squareModes, setSquareModes] = useState<(MinefieldSquareMode|string)[]>(Array(totalSquareCount).fill(MinefieldSquareMode.UNKNOWN));
-  const [lastUpdateTime, setLastUpdateTime] = useState(Date.now());
-  const [sessionState, setSessionState] = useState<SessionState>(session.state || SessionState.ACTIVE);
-  const [cheatModeEnabled, setCheatModeEnabled] = useState(false);
+  const [squareModes, setSquareModes] = useState<(MinefieldSquareMode | string)[]>(Array(totalSquareCount).fill(MinefieldSquareMode.UNKNOWN));
+  const [sessionState, setSessionState] = useState<SessionState | string>(session.state || SessionState.ACTIVE);
+  const [lastUpdateTime, setLastUpdateTime] = useState(Date.now())
 
   // Re-calculate the padding and margin.
   const handleWindowResize = () => {
@@ -36,16 +31,24 @@ const MinefieldScreen: React.FC<MinefieldProps> = ({ session, onPause }) => {
     setWindowHeight(window.innerHeight);
   };
 
+  const processSnapshot = (gameSnapshot: GameSnapshot) => {
+    const newSquareModes: (MinefieldSquareMode | string)[] = [...squareModes];
+
+    for (let move of gameSnapshot.moves) {
+      const index = convertCoordinateToIndex(move.x, move.y)
+      newSquareModes[index] = move.state
+    }
+
+    setSnapshot(gameSnapshot);
+    setSquareModes(newSquareModes);
+    setSessionState(gameSnapshot.info.state);
+    setLastUpdateTime(Date.now())
+  }
+
   useEffect(() => {
-    sessionManager.getMoves(session.id)
-      .then(moves => {
-        const newSquareModes = [...squareModes];
-        for (let move of moves) {
-          const moveIndex = convertCoordinateToIndex(move.x, move.y);
-          newSquareModes[moveIndex] = move.state;
-        }
-        setSquareModes(newSquareModes);
-      });
+    gameEngine
+      .get(session.id)
+      .then(processSnapshot);
 
     window.addEventListener('resize', handleWindowResize);
 
@@ -61,131 +64,22 @@ const MinefieldScreen: React.FC<MinefieldProps> = ({ session, onPause }) => {
     onPause();
   }
 
-  const evaluateSessionState = (): SessionState => {
-    let clearedSquareCount = 0;
-    let flaggedSquareCount = 0;
-    for (let squareMode of squareModes) {
-      if (squareMode === MinefieldSquareMode.CLEARED) {
-        clearedSquareCount++;
-      } else if (squareMode === MinefieldSquareMode.FLAGGED) {
-        flaggedSquareCount++;
-      } else if (squareMode === MinefieldSquareMode.EXPLODED) {
-        sessionManager.setState(session.id, SessionState.EXPLODED);
-        return SessionState.EXPLODED;
-      }
-    }
-
-    if (clearedSquareCount + flaggedSquareCount === totalSquareCount) {
-      sessionManager.setState(session.id, SessionState.CLEARED);
-      return SessionState.CLEARED;
-    } else if (clearedSquareCount + totalMineCount === totalSquareCount) {
-      sessionManager.setState(session.id, SessionState.CLEARED);
-      return SessionState.CLEARED;
-    }
-
-    return SessionState.ACTIVE;
-  }
-
   const afterSquareIsClicked = (x: number, y: number) => {
-    const squareIndex = convertCoordinateToIndex(x, y);
-
-    if (mineIndexes.includes(squareIndex)) {
-      squareModes[squareIndex] = MinefieldSquareMode.EXPLODED;
-
-      sessionManager.addMove(session.id, session.userId, x, y, squareModes[squareIndex]);
-    } else {
-      const clearIndexes: number[] = [];
-
-      findClearIndexes(x, y, clearIndexes);
-
-      // for (let clearIndex of clearIndexes) {
-      //   squareModes[clearIndex] = MinefieldSquareMode.CLEARED;
-      // }
-    }
-
-    setSquareModes(squareModes);
-    setLastUpdateTime(Date.now());
-
-    const currentState = evaluateSessionState();
-    if (currentState !== SessionState.ACTIVE) {
-      setSessionState(currentState);
-    }
+    gameEngine
+      .visit(session.id, x, y)
+      .then(processSnapshot);
   }
 
   const afterSquareIsFlagged = (x: number, y: number) => {
     const squareIndex = convertCoordinateToIndex(x, y);
-    squareModes[squareIndex] = squareModes[squareIndex] === MinefieldSquareMode.FLAGGED
+    const newState = squareModes[squareIndex] === MinefieldSquareMode.FLAGGED
       ? MinefieldSquareMode.UNKNOWN
       : MinefieldSquareMode.FLAGGED;
 
-    sessionManager.addMove(session.id, session.userId, x, y, squareModes[squareIndex]);
-    setSquareModes(squareModes);
-    setLastUpdateTime(Date.now());
-
-    const currentState = evaluateSessionState();
-    if (currentState !== SessionState.ACTIVE) {
-      setSessionState(currentState);
-    }
+    gameEngine
+      .visit(session.id, x, y, newState)
+      .then(processSnapshot);
   }
-
-  const toggleCheatMode = () => {
-    setCheatModeEnabled(!cheatModeEnabled);
-    setLastUpdateTime(Date.now());
-  }
-
-  const findNeighbourIndexes = (x: number, y: number): number[] => {
-    const neighbourIndexes: number[] = [];
-
-    for (let neighbourY = Math.max(0, y - 1); neighbourY <= Math.min(session.height - 1, y + 1); neighbourY++) {
-      for (let neighbourX = Math.max(0, x - 1); neighbourX <= Math.min(session.width - 1, x + 1); neighbourX++) {
-        neighbourIndexes.push(convertCoordinateToIndex(neighbourX, neighbourY));
-      }
-    }
-
-    return neighbourIndexes;
-  }
-
-  const findClearIndexes = (x: number, y: number, clearIndexes: number[], depth?: number) => {
-    const currentIndex = convertCoordinateToIndex(x, y);
-
-    depth = depth || 0;
-
-    if (clearIndexes.includes(currentIndex) || mineIndexes.includes(currentIndex) || squareModes[currentIndex] !== MinefieldSquareMode.UNKNOWN) {
-      return;
-    } else {
-      squareModes[currentIndex] = MinefieldSquareMode.CLEARED;
-      clearIndexes.push(currentIndex);
-      sessionManager.addMove(session.id, session.userId, x, y, squareModes[currentIndex]);
-    }
-
-    const neighbourNodes: {x: number, y: number}[] = [];
-
-    // Check if Left is clear.
-    if (x - 1 >= 0) {
-      neighbourNodes.push({x: x - 1, y: y});
-    }
-
-    // Check if Right is clear.
-    if (x + 1 < session.width) {
-      neighbourNodes.push({x: x + 1, y: y});
-    }
-
-    // Check if Top is clear.
-    if (y - 1 >= 0) {
-      neighbourNodes.push({x: x, y: y - 1});
-    }
-
-    // Check if Bottom is clear.
-    if (y + 1 < session.height) {
-      neighbourNodes.push({x: x, y: y + 1});
-    }
-
-    for (let neighbourNode of neighbourNodes) {
-      findClearIndexes(neighbourNode.x, neighbourNode.y, clearIndexes, depth + 1);
-    }
-  }
-
-  const isActiveField = evaluateSessionState() === 'active';
 
   // Generate the square matrix.
   const rowElements = [];
@@ -195,19 +89,15 @@ const MinefieldScreen: React.FC<MinefieldProps> = ({ session, onPause }) => {
     // Generate squares per row.
     for (let columnId = 0; columnId < session.width; columnId++) {
       const squareIndex = convertCoordinateToIndex(columnId, rowId);
-      const rigged = mineIndexes.includes(squareIndex);
+      const mineCount = snapshot !== null ? snapshot.hint.nearby_mine_count[rowId][columnId] : '';
 
-      // Scan the neighbour squares.
-      // This loop is ensuring that the range is not exceeding.
-      let squareLabel = '';
-      let neighbourMineCount: number = 0;
-      for (let neighbourIndex of findNeighbourIndexes(columnId, rowId)) {
-        if (rigged) {
-          squareLabel = '💣';
-        } else {
-          neighbourMineCount += mineIndexes.includes(neighbourIndex) ? 1 : 0;
-          squareLabel = neighbourMineCount === 0 ? '' : `${neighbourMineCount}`
-        }
+      let squareLabel = mineCount === 0 ? '' : `${mineCount}`;
+
+      const squareMode = squareModes[squareIndex];
+      if (squareMode === MinefieldSquareMode.EXPLODED) {
+        squareLabel = '💣';
+      } else if (squareMode === MinefieldSquareMode.FLAGGED) {
+        squareLabel = '⛳️';
       }
 
       columnElements.push(
@@ -215,10 +105,8 @@ const MinefieldScreen: React.FC<MinefieldProps> = ({ session, onPause }) => {
           key={`${squareIndex}@${Date.now()}`}
           x={columnId}
           y={rowId}
-          mode={squareModes[squareIndex]}
-          enabled={isActiveField}
-          cheatModeEnabled={cheatModeEnabled}
-          rigged={rigged}
+          mode={squareMode}
+          enabled={snapshot !== null ? (snapshot.info.state === null || snapshot.info.state === 'active') : false}
           label={squareLabel}
           onClick={afterSquareIsClicked}
           onFlag={afterSquareIsFlagged}
@@ -259,14 +147,13 @@ const MinefieldScreen: React.FC<MinefieldProps> = ({ session, onPause }) => {
   return (
     <div className="minefield-container" data-state={sessionState}>
       <h1>
-        <span style={{flex: 1, display: 'flex', maxWidth: '25%', justifyContent: 'flex-start'}}>
+        <span style={{ flex: 1, display: 'flex', maxWidth: '25%', justifyContent: 'flex-start' }}>
           <button onClick={onSuspend}>&lt;</button>
-          {/* <button onClick={toggleCheatMode}>{cheatModeEnabled ? 'Disable' : 'Enable'} Cheat Mode</button> */}
         </span>
         <span className="flex-spacer"></span>
         <span className="session-id">Level {session.mineDensity / 5} ({session.width} x {session.height})</span>
         <span className="flex-spacer"></span>
-        <span style={{flex: 1, display: 'flex', maxWidth: '25%', justifyContent: 'flex-end'}}>
+        <span style={{ flex: 1, display: 'flex', maxWidth: '25%', justifyContent: 'flex-end' }}>
           <span className="session-state">{sessionState}</span>
         </span>
       </h1>

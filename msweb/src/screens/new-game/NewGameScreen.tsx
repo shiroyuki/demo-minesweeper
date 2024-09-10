@@ -75,7 +75,6 @@ const NewGameScreen: React.FC<NewGameScreenProps> = ({ onStart }) => {
           name="mineDensity"
           value={newGameParameters.mineDensity}
           onChange={handleChange} />
-        <div className="help">{newGameParameters.height * newGameParameters.width * newGameParameters.mineDensity / 100} mines out of {newGameParameters.height * newGameParameters.width} squares</div>
       </div>
       <button type="submit">Start</button>
     </form>
