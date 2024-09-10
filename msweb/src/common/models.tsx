@@ -1,4 +1,4 @@
-import MainWindowMode from "./MainWindowMode";
+import SessionState from "./SessionState";
 
 interface Coordinate {
   x: number;
@@ -12,7 +12,7 @@ interface Session {
   height: number;
   mineDensity: number;
   mineCoordinates?: Coordinate[];
-  state?: MainWindowMode;
+  state?: SessionState;
   createTime?: number;
 }
 

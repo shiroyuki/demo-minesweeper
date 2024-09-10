@@ -9,8 +9,9 @@
 
     .game-item {
         display: flex;
-        flex-direction: column;
-        padding: 16px;
+        flex-direction: row;
+        align-items: center;
+        padding: 16px 24px;
         border: 3px solid #ddd;
         margin-bottom: 8px;
         cursor: pointer;
@@ -22,7 +23,17 @@
 
         & > span {
             display: block;
-            margin-bottom: 4px;
+        }
+
+        .state {
+            font-size: 36px;
+            margin-right: 12px;
+        }
+
+        .meta {
+            display: flex;
+            flex-direction: column;
+            margin: 0;
         }
 
         .id {
@@ -31,19 +42,15 @@
             margin-top: -12px;
         }
 
-        .meta {
-            display: flex;
-            flex-direction: column;
+        .level {
             font-weight: 700;
-            margin: 12px 0 24px 0;
+            font-size: 14px;
+        }
 
-            .level {
-                font-size: 14px;
-            }
-
-            .dimension {
-                font-size: 24px;
-            }
+        .dimension {
+            font-weight: 700;
+            font-size: 24px;
+            margin-bottom: 8px;
         }
 
         .elapsed-time {

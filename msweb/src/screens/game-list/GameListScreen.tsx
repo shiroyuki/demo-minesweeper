@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { sessionManager } from "../../common/SessionManager";
 import { Session } from '../../common/models';
 import './GameListScreen.scss';
+import SessionState from "../../common/SessionState";
 
 interface GameListScreenProps {
   onSelect: (id: string) => void;
@@ -14,7 +15,7 @@ function getElaspedTime(game: Session): string {
   const dividers = [60.0, 60.0, 24.0];
   const units = ['second', 'minute', 'hour', 'day'];
 
-  let remainder = diff;
+  let remainder = Math.floor(diff);
   let unitIndex = 0
 
   for (let unitDivider of dividers) {
@@ -26,7 +27,7 @@ function getElaspedTime(game: Session): string {
     }
   }
 
-  return `${remainder} ${units[unitIndex]} ago`;
+  return `${remainder} ${units[unitIndex]}${remainder > 1 ? 's' : ''} ago`;
 }
 
 const GameListScreen: React.FC<GameListScreenProps> = ({ onSelect }) => {
@@ -66,12 +67,15 @@ const GameListScreen: React.FC<GameListScreenProps> = ({ onSelect }) => {
           .flatMap(game => {
             return (
               <div key={game.id} className="game-item" onClick={() => onSelect(game.id)}>
-                <span className="id">{game.id}</span>
+                <span className="state">
+                  { game.state === SessionState.EXPLODED ? '💣' : (game.state === SessionState.CLEARED ? '✅' : '⏳') }
+                </span>
                 <span className="meta">
+                  {/* <span className="id">{game.id}</span> */}
                   <span className="level">Level {game.mineDensity / 5}</span>
                   <span className="dimension">{game.width} x {game.height}</span>
+                  <span className="elapsed-time">{getElaspedTime(game)}</span>
                 </span>
-                <span className="elapsed-time">{getElaspedTime(game)}</span>
               </div>
             )
           })

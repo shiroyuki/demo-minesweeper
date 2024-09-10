@@ -1,6 +1,6 @@
 import { authenticator } from "./Authenticator";
 import { backendBaseUrl, fetchMode } from "./config";
-import MainWindowMode from "./MainWindowMode";
+import SessionState from "./SessionState";
 import { Coordinate, Move, Session } from "./models";
 
 class SessionManager {
@@ -87,7 +87,7 @@ class SessionManager {
         return data;
     }
 
-    async setState(id: string, state: MainWindowMode) {
+    async setState(id: string, state: SessionState) {
         const getResponse = await fetch(
             `${backendBaseUrl}/api/games/${id}`,
             {

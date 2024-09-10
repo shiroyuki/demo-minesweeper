@@ -55,6 +55,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onAuthSucceeded }) => {
           <input id="login-username"
             type="text"
             name="username"
+            required={true}
             value={formData.username}
             onChange={handleChange} />
         </div>
@@ -63,6 +64,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onAuthSucceeded }) => {
           <input id="login-password"
             type="password"
             name="password"
+            required={true}
             value={formData.password}
             onChange={handleChange} />
         </div>

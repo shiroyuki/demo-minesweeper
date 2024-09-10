@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Session, sessionManager } from "../../common/SessionManager";
 import './MinefieldScreen.scss';
 import { MinefieldSquare, MinefieldSquareMode } from "./MinefieldSquare";
-import MainWindowMode from "../../common/MainWindowMode";
+import SessionState from "../../common/SessionState";
 
 interface MinefieldProps {
   session: Session;
@@ -27,7 +27,7 @@ const MinefieldScreen: React.FC<MinefieldProps> = ({ session, onPause }) => {
   const [windowHeight, setWindowHeight] = useState(window.innerHeight);
   const [squareModes, setSquareModes] = useState<(MinefieldSquareMode|string)[]>(Array(totalSquareCount).fill(MinefieldSquareMode.UNKNOWN));
   const [lastUpdateTime, setLastUpdateTime] = useState(Date.now());
-  const [sessionState, setSessionState] = useState<MainWindowMode>(session.state || MainWindowMode.ACTIVE);
+  const [sessionState, setSessionState] = useState<SessionState>(session.state || SessionState.ACTIVE);
   const [cheatModeEnabled, setCheatModeEnabled] = useState(false);
 
   // Re-calculate the padding and margin.
@@ -61,7 +61,7 @@ const MinefieldScreen: React.FC<MinefieldProps> = ({ session, onPause }) => {
     onPause();
   }
 
-  const evaluateSessionState = (): MainWindowMode => {
+  const evaluateSessionState = (): SessionState => {
     let clearedSquareCount = 0;
     let flaggedSquareCount = 0;
     for (let squareMode of squareModes) {
@@ -70,20 +70,20 @@ const MinefieldScreen: React.FC<MinefieldProps> = ({ session, onPause }) => {
       } else if (squareMode === MinefieldSquareMode.FLAGGED) {
         flaggedSquareCount++;
       } else if (squareMode === MinefieldSquareMode.EXPLODED) {
-        sessionManager.setState(session.id, MainWindowMode.EXPLODED);
-        return MainWindowMode.EXPLODED;
+        sessionManager.setState(session.id, SessionState.EXPLODED);
+        return SessionState.EXPLODED;
       }
     }
 
     if (clearedSquareCount + flaggedSquareCount === totalSquareCount) {
-      sessionManager.setState(session.id, MainWindowMode.CLEARED);
-      return MainWindowMode.CLEARED;
+      sessionManager.setState(session.id, SessionState.CLEARED);
+      return SessionState.CLEARED;
     } else if (clearedSquareCount + totalMineCount === totalSquareCount) {
-      sessionManager.setState(session.id, MainWindowMode.CLEARED);
-      return MainWindowMode.CLEARED;
+      sessionManager.setState(session.id, SessionState.CLEARED);
+      return SessionState.CLEARED;
     }
 
-    return MainWindowMode.ACTIVE;
+    return SessionState.ACTIVE;
   }
 
   const afterSquareIsClicked = (x: number, y: number) => {
@@ -107,20 +107,23 @@ const MinefieldScreen: React.FC<MinefieldProps> = ({ session, onPause }) => {
     setLastUpdateTime(Date.now());
 
     const currentState = evaluateSessionState();
-    if (currentState !== MainWindowMode.ACTIVE) {
+    if (currentState !== SessionState.ACTIVE) {
       setSessionState(currentState);
     }
   }
 
   const afterSquareIsFlagged = (x: number, y: number) => {
     const squareIndex = convertCoordinateToIndex(x, y);
-    squareModes[squareIndex] = squareModes[squareIndex] === MinefieldSquareMode.FLAGGED ? MinefieldSquareMode.UNKNOWN : MinefieldSquareMode.FLAGGED;
+    squareModes[squareIndex] = squareModes[squareIndex] === MinefieldSquareMode.FLAGGED
+      ? MinefieldSquareMode.UNKNOWN
+      : MinefieldSquareMode.FLAGGED;
 
+    sessionManager.addMove(session.id, session.userId, x, y, squareModes[squareIndex]);
     setSquareModes(squareModes);
     setLastUpdateTime(Date.now());
 
     const currentState = evaluateSessionState();
-    if (currentState !== MainWindowMode.ACTIVE) {
+    if (currentState !== SessionState.ACTIVE) {
       setSessionState(currentState);
     }
   }
@@ -261,7 +264,7 @@ const MinefieldScreen: React.FC<MinefieldProps> = ({ session, onPause }) => {
           {/* <button onClick={toggleCheatMode}>{cheatModeEnabled ? 'Disable' : 'Enable'} Cheat Mode</button> */}
         </span>
         <span className="flex-spacer"></span>
-        <span className="session-id">Level {session.mineDensity / 5} ({windowWidth} x {windowHeight})</span>
+        <span className="session-id">Level {session.mineDensity / 5} ({session.width} x {session.height})</span>
         <span className="flex-spacer"></span>
         <span style={{flex: 1, display: 'flex', maxWidth: '25%', justifyContent: 'flex-end'}}>
           <span className="session-state">{sessionState}</span>
