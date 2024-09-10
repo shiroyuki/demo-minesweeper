@@ -53,10 +53,6 @@ flowchart LR
 ### Code Design or Implementation
 
 * Lack of proper error handling.
-* Lack of input validations.
-* The UI may switch from the minefield to the home screen during the periodic check + auto session renewal.
-  * The periodic check is disabled and the token TTL is set to 2 hours long.
-* Some UI interactions may initiate multiple HTTP requests simulteneously. The batch APIs will be needed to reduce the number of API requests.
 * For simplicity, the authentication should be re-implemented.
   * Currently, the client-credentials OAuth2 authentication is implemented where Django User's username and password are client ID and secrets respectively.
 * CSRF is disabled for simplicity.
