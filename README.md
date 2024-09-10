@@ -44,6 +44,17 @@ flowchart LR
    * Please reconfigure the file (`.env`) as needed. See the comment for tips.
    * The `.env` is used by the setup script and the backend.
    * Only `POSTGRES_HOST` and `POSTGRES_PORT` are for connecting from the host machine to the database server.
+   * For example,
+     ```properties
+     # NOTE: Run "openssl rand -hex 24" to randomly generate
+     JWT_SECRET=661c190e...f2b
+     POSTGRES_HOST=127.0.0.1
+     POSTGRES_PORT=35432
+     # NOTE: Run "openssl rand -hex 24" to randomly generate
+     POSTGRES_PASSWORD=b610932f7...adc2
+     # NOTE: Run "openssl rand -hex 8" to randomly generate
+     POSTGRES_USER=fd5605...f55
+     ```
 2. Run `make docker-start` to start all services.
    * After everything is running, the app is accessible at http://localhost:3000
 3. As the app requires Django users, please run `make docker-superuser` to create your own account.
