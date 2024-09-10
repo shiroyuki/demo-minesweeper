@@ -109,6 +109,12 @@ def _create_new_session(entry: Dict[str, Any], user_id: int) -> GameSession:
     return new_session
 
 
+def _mask_fields(original_list: List[GameSession]) -> List[GameSession]:
+    for session in original_list:
+        session.mineCoordinates = []  # Mask the coordinate
+    return original_list
+
+
 @csrf_exempt
 def game_session_root(request: HttpRequest):
     """ Root-level Game Session API """
@@ -117,7 +123,8 @@ def game_session_root(request: HttpRequest):
         GameSession,
         map_dict_to_object=lambda entry: _create_new_session(entry, get_authorized_user_id(request, 'game')),
         sorting_order=['-createTime'],
-        reiterate_list=None
+        reiterate_list=_mask_fields,
+        listing_limit=10,
     )
 
 

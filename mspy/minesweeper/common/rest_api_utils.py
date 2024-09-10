@@ -66,7 +66,8 @@ def handle_root_api_request(request: HttpRequest,
                             cls: Type[T],
                             map_dict_to_object: Callable[[Dict[str, Any]], T],
                             sorting_order: List[str],
-                            reiterate_list: Optional[Callable[[List[T]], List[T]]]):
+                            reiterate_list: Optional[Callable[[List[T]], List[T]]],
+                            listing_limit: Optional[int] = None):
     """ Handle all requests at the root level of the rest API, e.g., "/api/<resource_type>/".
 
         This includes listing all resources owned by the authenticated user and creating a new resource.
@@ -84,6 +85,12 @@ def handle_root_api_request(request: HttpRequest,
             for k, v in request.GET.items()
             if k.startswith('filter_') and v
         }
+
+        cursor = cls.objects.filter(userId=user_id, **filters)
+        if sorting_order:
+            cursor = cursor.order_by(*sorting_order)
+        if listing_limit and listing_limit > 0:
+            cursor = cursor[:listing_limit]
 
         obj_list = [obj for obj in cls.objects.filter(userId=user_id, **filters).order_by(*sorting_order)]
 
