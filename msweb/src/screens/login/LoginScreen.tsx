@@ -10,7 +10,7 @@ interface LoginScreenProps {
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ onAuthSucceeded }) => {
   const [formData, setFormData] = useState({username: '', password: ''});
-  const [inFlight, setiInFlight] = useState(false);
+  const [inFlight, setInFlight] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -28,16 +28,19 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onAuthSucceeded }) => {
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    setiInFlight(true);
+    setInFlight(true);
 
-    const response: TokenResponse | null = await authenticator.authenticate(formData.username, formData.password);
+    authenticator
+      .authenticate(formData.username, formData.password)
+      .then(response => {
+        if (response !== null) {
+          authenticator.saveSession(response);
 
-    if (response !== null) {
-      authenticator.saveSession(response);
+          onAuthSucceeded(response.expires_in);
+        }
 
-      setiInFlight(false);
-      onAuthSucceeded(response.expires_in);
-    }
+        setInFlight(false);
+      });
   }
 
   if (inFlight) {
